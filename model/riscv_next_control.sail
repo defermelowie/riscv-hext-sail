@@ -26,7 +26,7 @@ function clause ext_read_CSR(0x042) = Some(ucause.bits)
 function clause ext_read_CSR(0x043) = Some(utval)
 function clause ext_read_CSR(0x044) = Some(lower_sip(lower_mip(mip, mideleg), sideleg).bits)
 
-function clause ext_write_CSR(0x000, value) = { mstatus = legalize_ustatus(mstatus, value); Some(mstatus.bits) }
+function clause ext_write_CSR(0x000, value) = { mstatus = legalize_ustatus(mstatus, zero_extend(value)); Some(mstatus.bits[sizeof(xlen) - 1 .. 0]) }
 function clause ext_write_CSR(0x004, value) = { let sie = legalize_uie(lower_mie(mie, mideleg), sideleg, value);
                                                  mie = lift_sie(mie, mideleg, sie);
                                                  Some(mie.bits) }

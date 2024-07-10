@@ -505,10 +505,8 @@ function init_sys() -> unit = {
   mstatus[MPP] = privLevel_to_bits(lowest_supported_privLevel());
 
   /* set to little-endian mode */
-  if sizeof(xlen) == 64 then {
-    mstatus = Mk_Mstatus([mstatus.bits with 37 .. 36 = 0b00])
-  };
-  mstatush.bits = zero_extend(0b0);
+  mstatus[MBE] = 0b0;
+  mstatus[SBE] = 0b0;
 
   mip.bits     = zero_extend(0b0);
   mie.bits     = zero_extend(0b0);

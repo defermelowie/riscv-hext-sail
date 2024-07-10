@@ -30,7 +30,7 @@ function readCSR csr : csreg -> xlenbits = {
     (0xF13,  _) => mimpid,
     (0xF14,  _) => mhartid,
     (0xF15,  _) => mconfigptr,
-    (0x300,  _) => mstatus.bits,
+    (0x300,  _) => mstatus.bits[sizeof(xlen) - 1 .. 0],
     (0x301,  _) => misa.bits,
     (0x302,  _) => medeleg.bits,
     (0x303,  _) => mideleg.bits,
@@ -38,7 +38,7 @@ function readCSR csr : csreg -> xlenbits = {
     (0x305,  _) => get_mtvec(),
     (0x306,  _) => zero_extend(mcounteren.bits),
     (0x30A,  _) => menvcfg.bits[sizeof(xlen) - 1 .. 0],
-    (0x310, 32) => mstatush.bits,
+    (0x310, 32) => mstatus.bits[63 .. 32],
     (0x31A, 32) => menvcfg.bits[63 .. 32],
     (0x320,  _) => zero_extend(mcountinhibit.bits),
 
@@ -75,7 +75,7 @@ function readCSR csr : csreg -> xlenbits = {
     (0x7a0,  _) => ~(tselect),  /* this indicates we don't have any trigger support */
 
     /* supervisor mode */
-    (0x100,  _) => lower_mstatus(mstatus).bits,
+    (0x100,  _) => lower_mstatus(mstatus).bits[sizeof(xlen) - 1 .. 0],
     (0x102,  _) => sedeleg.bits,
     (0x103,  _) => sideleg.bits,
     (0x104,  _) => lower_mie(mie, mideleg).bits,
@@ -116,7 +116,8 @@ function writeCSR (csr : csreg, value : xlenbits) -> unit = {
   let res : option(xlenbits) =
   match (csr, sizeof(xlen)) {
     /* machine mode */
-    (0x300,  _) => { mstatus = legalize_mstatus(mstatus, value); Some(mstatus.bits) },
+    (0x300, 32) => { mstatus = legalize_mstatus(mstatus, mstatus.bits[63 .. 32] @ value); Some(mstatus.bits[31 .. 0]) },
+    (0x300, 64) => { mstatus = legalize_mstatus(mstatus, value); Some(mstatus.bits) },
     (0x301,  _) => { misa = legalize_misa(misa, value); Some(misa.bits) },
     (0x302,  _) => { medeleg = legalize_medeleg(medeleg, value); Some(medeleg.bits) },
     (0x303,  _) => { mideleg = legalize_mideleg(mideleg, value); Some(mideleg.bits) },
@@ -125,7 +126,7 @@ function writeCSR (csr : csreg, value : xlenbits) -> unit = {
     (0x306,  _) => { mcounteren = legalize_mcounteren(mcounteren, value); Some(zero_extend(mcounteren.bits)) },
     (0x30A, 32) => { menvcfg = legalize_menvcfg(menvcfg, menvcfg.bits[63 .. 32] @ value); Some(menvcfg.bits[31 .. 0]) },
     (0x30A, 64) => { menvcfg = legalize_menvcfg(menvcfg, value); Some(menvcfg.bits) },
-    (0x310, 32) => { Some(mstatush.bits) }, // ignore writes for now
+    (0x310, 32) => { mstatus = legalize_mstatus(mstatus, value @ mstatus.bits[31 .. 0]); Some(mstatus.bits[63 .. 32]) },
     (0x31A, 32) => { menvcfg = legalize_menvcfg(menvcfg, value @ menvcfg.bits[31 .. 0]); Some(menvcfg.bits[63 .. 32]) },
     (0x320,  _) => { mcountinhibit = legalize_mcountinhibit(mcountinhibit, value); Some(zero_extend(mcountinhibit.bits)) },
     (0x340,  _) => { mscratch = value; Some(mscratch) },
@@ -156,7 +157,7 @@ function writeCSR (csr : csreg, value : xlenbits) -> unit = {
     (0x7a0,  _) => { tselect = value; Some(tselect) },
 
     /* supervisor mode */
-    (0x100,  _) => { mstatus = legalize_sstatus(mstatus, value); Some(mstatus.bits) },
+    (0x100,  _) => { mstatus = legalize_sstatus(mstatus, value); Some(mstatus.bits[sizeof(xlen) - 1 .. 0]) },
     (0x102,  _) => { sedeleg = legalize_sedeleg(sedeleg, value); Some(sedeleg.bits) },
     (0x103,  _) => { sideleg.bits = value; Some(sideleg.bits) }, /* TODO: does this need legalization? */
     (0x104,  _) => { mie = legalize_sie(mie, mideleg, value); Some(mie.bits) },
