@@ -108,6 +108,10 @@ val sys_enable_vext = {c: "sys_enable_vext", ocaml: "Platform.enable_vext", _: "
 /* whether misa.b was enabled at boot */
 val sys_enable_bext = {c: "sys_enable_bext", ocaml: "Platform.enable_bext", _: "sys_enable_bext"} : unit -> bool
 
+/* whether misa.h was enabled at boot */
+val sys_enable_hext : unit -> bool
+function sys_enable_hext() = true // TODO: add emulator flag
+
 /* This function allows an extension to veto a write to Misa
    if it would violate an alignment restriction on
    unsetting C. If it returns true the write will have no effect. */
